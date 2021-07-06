@@ -26,6 +26,7 @@ from RecoBTag.SecondaryVertex.trackSelection_cff import *
 from UHH2.core.muon_pfMiniIsolation_cff import *
 from UHH2.core.electron_pfMiniIsolation_cff import *
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+from EgammaUser.EgammaPostRecoTools.EgammaPostRecoTools import *
 
 # NOTE: all from xxx import * must go here, not inside the function
 
@@ -55,7 +56,7 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         If the year argument is not one of the allowable options
     """
     year = str(year)  # sanitise string
-    acceptable_years = ["2016v2", "2016v3", "2017v1", "2017v2", "2018", "UL17", "UL18"]
+    acceptable_years = ["2016v2", "2016v3", "2017v1", "2017v2", "2018", "UL16preVFP", "UL16postVFP", "UL17", "UL18"]
     if year not in acceptable_years:
         raise ValueError("year argument in generate_process() should be one of: %s. You provided: %s" % (acceptable_years, year))
 
@@ -78,8 +79,12 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
     elif year == "2017v1":
         process = cms.Process("USER", eras.Run2_2017)
     elif year == "2016v3":
-        process = cms.Process("USER", eras.Run2_2016, eras.run2_miniAOD_80XLegacy) 
+        process = cms.Process("USER", eras.Run2_2016, eras.run2_miniAOD_80XLegacy)
     elif year == "2016v2":
+        process = cms.Process("USER", eras.Run2_2016)
+    elif year == "UL16preVFP":
+        process = cms.Process("USER", eras.Run2_2016_HIPM)
+    elif year == "UL16postVFP":
         process = cms.Process("USER", eras.Run2_2016)
     elif year == "UL17":
         process = cms.Process("USER", eras.Run2_2017)
@@ -171,6 +176,48 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         'pfDeepBoostedJetTags:probZbb'
     ]
 
+    # from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
+    pfParticleNetJetTagsAll = [
+    'pfParticleNetJetTags:probTbcq',
+    'pfParticleNetJetTags:probTbqq',
+    'pfParticleNetJetTags:probTbc',
+    'pfParticleNetJetTags:probTbq',
+    'pfParticleNetJetTags:probTbel',
+    'pfParticleNetJetTags:probTbmu',
+    'pfParticleNetJetTags:probTbta',
+    'pfParticleNetJetTags:probWcq',
+    'pfParticleNetJetTags:probWqq',
+    'pfParticleNetJetTags:probZbb',
+    'pfParticleNetJetTags:probZcc',
+    'pfParticleNetJetTags:probZqq',
+    'pfParticleNetJetTags:probHbb',
+    'pfParticleNetJetTags:probHcc',
+    'pfParticleNetJetTags:probHqqqq',
+    'pfParticleNetJetTags:probQCDbb',
+    'pfParticleNetJetTags:probQCDcc',
+    'pfParticleNetJetTags:probQCDb',
+    'pfParticleNetJetTags:probQCDc',
+    'pfParticleNetJetTags:probQCDothers',
+    'pfParticleNetDiscriminatorsJetTags:TvsQCD',
+    'pfParticleNetDiscriminatorsJetTags:WvsQCD',
+    'pfParticleNetDiscriminatorsJetTags:ZvsQCD',
+    'pfParticleNetDiscriminatorsJetTags:ZbbvsQCD',
+    'pfParticleNetDiscriminatorsJetTags:HbbvsQCD',
+    'pfParticleNetDiscriminatorsJetTags:HccvsQCD',
+    'pfParticleNetDiscriminatorsJetTags:H4qvsQCD',
+    'pfMassDecorrelatedParticleNetJetTags:probXbb',
+    'pfMassDecorrelatedParticleNetJetTags:probXcc',
+    'pfMassDecorrelatedParticleNetJetTags:probXqq',
+    'pfMassDecorrelatedParticleNetJetTags:probQCDbb',
+    'pfMassDecorrelatedParticleNetJetTags:probQCDcc',
+    'pfMassDecorrelatedParticleNetJetTags:probQCDb',
+    'pfMassDecorrelatedParticleNetJetTags:probQCDc',
+    'pfMassDecorrelatedParticleNetJetTags:probQCDothers',
+    'pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XbbvsQCD',
+    'pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XccvsQCD',
+    'pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XqqvsQCD',
+    'pfParticleNetMassRegressionJetTags:mass']
+    ak8btagDiscriminators += pfParticleNetJetTagsAll
 
     bTagInfos = [
         'pfImpactParameterTagInfos', 'pfSecondaryVertexTagInfos', 'pfInclusiveSecondaryVertexFinderTagInfos', 'softPFMuonsTagInfos', 'softPFElectronsTagInfos'
@@ -289,6 +336,14 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         "2018": {
             "data": "102X_dataRun2_Prompt_v6",
             "mc": "102X_upgrade2018_realistic_v15",
+        },
+        "UL16preVFP": {
+            "data": "106X_dataRun2_v28",
+            "mc": "106X_mcRun2_asymptotic_preVFP_v8",
+        },
+        "UL16postVFP": {
+            "data": "106X_dataRun2_v28",
+            "mc": "106X_mcRun2_asymptotic_v13",
         },
         "UL17": {
             "data": "106X_dataRun2_v28",
@@ -1175,23 +1230,21 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
     )
     task.add(process.rekeyPackedPatJetsAk8PuppiJets)
 
-    #### update PUPPI to v14
-    from CommonTools.PileupAlgos.customizePuppiTune_cff import UpdatePuppiTuneV14
-    UpdatePuppiTuneV14(process, not useData)
+    #### update PUPPI to v15
+    from CommonTools.PileupAlgos.customizePuppiTune_cff import UpdatePuppiTuneV15
+    UpdatePuppiTuneV15(process, not useData)
 
     # Update DeepBoosted training to V2 for everything but 2016v2
     # Check https://twiki.cern.ch/twiki/bin/view/CMS/DeepAKXTagging for latest recommendations
     # e.g. 2018 specific training
     if (year != "2016v2"):
-        from RecoBTag.MXNet.pfDeepBoostedJet_cff import pfDeepBoostedJetTags, pfMassDecorrelatedDeepBoostedJetTags
-        from RecoBTag.MXNet.Parameters.V02.pfDeepBoostedJetPreprocessParams_cfi import pfDeepBoostedJetPreprocessParams as pfDeepBoostedJetPreprocessParamsV02
-        from RecoBTag.MXNet.Parameters.V02.pfMassDecorrelatedDeepBoostedJetPreprocessParams_cfi import pfMassDecorrelatedDeepBoostedJetPreprocessParams as pfMassDecorrelatedDeepBoostedJetPreprocessParamsV02
+        from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import pfDeepBoostedJetTags, pfMassDecorrelatedDeepBoostedJetTags
+        from RecoBTag.ONNXRuntime.Parameters.DeepBoostedJet.V02.pfDeepBoostedJetPreprocessParams_cfi import pfDeepBoostedJetPreprocessParams as pfDeepBoostedJetPreprocessParamsV02
+        from RecoBTag.ONNXRuntime.Parameters.DeepBoostedJet.V02.pfMassDecorrelatedDeepBoostedJetPreprocessParams_cfi import pfMassDecorrelatedDeepBoostedJetPreprocessParams as pfMassDecorrelatedDeepBoostedJetPreprocessParamsV02
         pfDeepBoostedJetTags.preprocessParams = pfDeepBoostedJetPreprocessParamsV02
-        pfDeepBoostedJetTags.model_path = 'RecoBTag/Combined/data/DeepBoostedJet/V02/full/resnet-symbol.json'
-        pfDeepBoostedJetTags.param_path = 'RecoBTag/Combined/data/DeepBoostedJet/V02/full/resnet-0000.params'
+        pfDeepBoostedJetTags.model_path = 'RecoBTag/Combined/data/DeepBoostedJet/V02/full/resnet.onnx'
         pfMassDecorrelatedDeepBoostedJetTags.preprocessParams = pfMassDecorrelatedDeepBoostedJetPreprocessParamsV02
-        pfMassDecorrelatedDeepBoostedJetTags.model_path = 'RecoBTag/Combined/data/DeepBoostedJet/V02/decorrelated/resnet-symbol.json'
-        pfMassDecorrelatedDeepBoostedJetTags.param_path = 'RecoBTag/Combined/data/DeepBoostedJet/V02/decorrelated/resnet-0000.params'
+        pfMassDecorrelatedDeepBoostedJetTags.model_path = 'RecoBTag/Combined/data/DeepBoostedJet/V02/decorrelated/resnet.onnx'
 
     ###############################################
     # Do deep flavours & deep tagging
@@ -1764,6 +1817,22 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
     process.load('UHH2.core.pfCandidatesByType_cff')
     process.load('CommonTools.ParticleFlow.deltaBetaWeights_cff')
 
+    needed_collections = [
+        'convertedPackedPFCandidates',
+        'convertedPackedPFCandidatePtrs',
+        'pfPileUp',
+        'pfNoPileUp',
+        'pfAllChargedHadrons',
+        'pfAllNeutralHadrons',
+        'pfAllPhotons',
+        'pfPileUpAllChargedParticles',
+        'pfWeightedNeutralHadrons',
+        'pfWeightedPhotons',
+        'pfAllChargedParticles',
+        ]
+    for m in needed_collections:
+        task.add(getattr(process, m))
+
     ###############################################
     # MUONS
     #
@@ -1796,10 +1865,39 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
     task.add(process.slimmedMuonsUSER)
 
     ###############################################
-    # ELECTRONS
+    # ELECTRONS and PHOTONS
     #
-    # mini-isolation
-    # FIXME: should we use the already existing miniIsolatioin in pat::Lepton?
+
+
+
+    # era needs to be passed, convert from the "year" string
+    if(year == "2016v2"): egamma_era = "2016-Legacy"
+    elif(year == "2016v3"): egamma_era = "2016-Legacy"
+    elif(year == "2017v1"): egamma_era = "2017-Nov17ReReco"
+    elif(year == "2017v2"): egamma_era = "2017-Nov17ReReco"
+    elif(year == "2018"): egamma_era = "2018-Prompt"
+    elif(year == "UL16preVFP"): egamma_era = "2016preVFP-UL"
+    elif(year == "UL16postVFP"): egamma_era = "2016postVFP-UL"
+    elif(year == "UL17"): egamma_era = "2017-UL"
+    elif(year == "UL18"): egamma_era = "2018-UL"
+
+    # setting runVID according to recommendations
+    if(year == "2016v2"): doRunVID=True
+    elif(year == "2016v3"): doRunVID=True
+    elif(year == "2017v1"): doRunVID=True
+    elif(year == "2017v2"): doRunVID=True
+    elif(year == "2018"): doRunVID=True
+    elif(year == "UL16preVFP"): doRunVID=True
+    elif(year == "UL16postVFP"): doRunVID=True
+    elif(year == "UL17"): doRunVID=True
+    elif(year == "UL18"): doRunVID=True
+
+    doRunEnergyCorrections=True
+    if(year == "2016v3"): runEnergyCorrections=False
+
+    # this is the magic thing by the Egamma POG that does *everything*
+    setupEgammaPostRecoSeq(process, era=egamma_era, runVID=doRunVID, runEnergyCorrections=doRunEnergyCorrections)
+
     el_isovals = []
 
     load_elecPFMiniIso(process,
@@ -1812,22 +1910,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         src_charged_pileup = 'pfPileUpAllChargedParticles',
         isoval_list = el_isovals
     )
-    needed_collections = [
-        'convertedPackedPFCandidates',
-        'convertedPackedPFCandidatePtrs',
-        'pfPileUp',
-        'pfNoPileUp',
-        'pfAllChargedHadrons',
-        'pfAllNeutralHadrons',
-        'pfAllPhotons',
-        'pfPileUpAllChargedParticles',
-        'pfWeightedNeutralHadrons',
-        'pfWeightedPhotons',
-        'pfAllChargedParticles',
-        ]
-    for m in needed_collections:
-        task.add(getattr(process, m))
-
     load_elecPFMiniIso(process,
         'elecPFMiniIsoSequencePFWGT',
         algo = 'PFWGT',
@@ -1840,30 +1922,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         task.add(getattr(process, m))
         task.add(getattr(process, m.replace('Value', 'Deposit')))
 
-
-
-    # electron ID from VID
-    switchOnVIDElectronIdProducer(process, DataFormat.MiniAOD)
-
-    elecID_mod_ls = [
-        # For 2016
-        'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV60_cff',
-        'RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff',
-        'RecoEgamma.ElectronIdentification.Identification.cutBasedElectronHLTPreselecition_Summer16_V1_cff',
-        'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_GeneralPurpose_V1_cff',
-        'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_HZZ_V1_cff',
-        # For 2017 (& 2018 for now)
-        'RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V2_cff',
-        'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV70_cff',
-        'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_noIso_V2_cff',
-        'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_iso_V2_cff',
-    ]
-
-    for mod in elecID_mod_ls:
-        setupAllVIDIdsInModule(process, mod, setupVIDElectronSelection)
-
-
-
     from RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff import isoInputs as ele_iso_16
     from RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V2_cff import isoInputs as ele_iso_17
     iso_input_era_dict = {
@@ -1872,6 +1930,8 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         "2017v1": ele_iso_17,
         "2017v2": ele_iso_17,
         "2018": ele_iso_17,
+        "UL16preVFP": ele_iso_17,
+        "UL16postVFP": ele_iso_17,
         "UL17": ele_iso_17,
         "UL18": ele_iso_17,
     }
@@ -1881,112 +1941,12 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                                   src=cms.InputTag(
                                                       'slimmedElectrons'),
 
-                                                  vmaps_bool=cms.PSet(
-                                                      # 2016
-                                                      heepElectronID_HEEPV60=cms.InputTag(
-                                                          'egmGsfElectronIDs:heepElectronID-HEEPV60'),
-                                                      cutBasedElectronID_Summer16_80X_V1_veto=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-veto'),
-                                                      cutBasedElectronID_Summer16_80X_V1_loose=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose'),
-                                                      cutBasedElectronID_Summer16_80X_V1_medium=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-medium'),
-                                                      cutBasedElectronID_Summer16_80X_V1_tight=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight'),
-                                                      cutBasedElectronHLTPreselection_Summer16_V1=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronHLTPreselection-Summer16-V1'),
-                                                      mvaEleID_Spring16_GeneralPurpose_V1_wp80=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Spring16-GeneralPurpose-V1-wp80'),
-                                                      mvaEleID_Spring16_GeneralPurpose_V1_wp90=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Spring16-GeneralPurpose-V1-wp90'),
-                                                      # 2017 & 2018
-                                                      cutBasedElectronID_Fall17_94X_V2_veto=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-veto'),
-                                                      cutBasedElectronID_Fall17_94X_V2_loose=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-loose'),
-                                                      cutBasedElectronID_Fall17_94X_V2_medium=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-medium'),
-                                                      cutBasedElectronID_Fall17_94X_V2_tight=cms.InputTag(
-                                                          'egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-tight'),
-                                                      heepElectronID_HEEPV70=cms.InputTag(
-                                                          'egmGsfElectronIDs:heepElectronID-HEEPV70'),
-                                                      mvaEleID_Fall17_noIso_V2_wp90=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Fall17-noIso-V2-wp90'),
-                                                      mvaEleID_Fall17_noIso_V2_wp80=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Fall17-noIso-V2-wp80'),
-                                                      mvaEleID_Fall17_noIso_V2_wpLoose=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Fall17-noIso-V2-wpLoose'),
-                                                      mvaEleID_Fall17_iso_V2_wp90=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Fall17-iso-V2-wp90'),
-                                                      mvaEleID_Fall17_iso_V2_wp80=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Fall17-iso-V2-wp80'),
-                                                      mvaEleID_Fall17_iso_V2_wpLoose=cms.InputTag(
-                                                          'egmGsfElectronIDs:mvaEleID-Fall17-iso-V2-wpLoose'),
-                                                  ),
-
-                                                  vmaps_float=cms.PSet(
-                                                      mvaGeneralPurpose=cms.InputTag(
-                                                          'electronMVAValueMapProducer:ElectronMVAEstimatorRun2Spring16GeneralPurposeV1Values'),
-                                                      mvaHZZ=cms.InputTag(
-                                                          'electronMVAValueMapProducer:ElectronMVAEstimatorRun2Spring16HZZV1Values'),
-                                                      ElectronMVAEstimatorIso=cms.InputTag(
-                                                          'electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17IsoV2Values'),
-                                                      ElectronMVAEstimatorNoIso=cms.InputTag(
-                                                          'electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17NoIsoV2Values')
-                                                  ),
-
                                                   vmaps_double=cms.vstring(el_isovals),
                                                   effAreas_file=cms.FileInPath(iso_input_era_dict[year].isoEffAreas)
                                                   )
-    task.add(process.egmGsfElectronIDs)
     task.add(process.slimmedElectronsUSER)
 
-
-    # photon ID from VID
-    switchOnVIDPhotonIdProducer(process, DataFormat.MiniAOD)
-    photonID_mod_ls = [
-        # For 2016
-        'RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring16_V2p2_cff',
-        'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Spring16_nonTrig_V1_cff',
-        # For 2017 (& 2018 for now)
-        'RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Fall17_94X_V2_cff',
-        'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Fall17_94X_V2_cff',
-    ]
-
-    for mod in photonID_mod_ls:
-        setupAllVIDIdsInModule(process, mod, setupVIDPhotonSelection)
-    process.slimmedPhotonsUSER = cms.EDProducer('PATPhotonUserData',
-                                                  src=cms.InputTag(
-                                                      'slimmedPhotons'),
-
-                                                  vmaps_bool=cms.PSet(
-                                                      # 2016
-                                                      cutBasedPhotonID_Spring16_V2p2_loose=cms.InputTag(
-                                                          'egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-loose'),
-                                                      cutBasedPhotonID_Spring16_V2p2_medium=cms.InputTag(
-                                                          'egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-medium'),
-                                                      cutBasedPhotonID_Spring16_V2p2_tight=cms.InputTag(
-                                                          'egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-tight'),
-                                                      mvaPhoID_Spring16_nonTrig_V1_wp90=cms.InputTag(
-                                                          'egmPhotonIDs:mvaPhoID-Spring16-nonTrig-V1-wp90'),
-                                                      mvaPhoID_Spring16_nonTrig_V1_wp80=cms.InputTag(
-                                                          'egmPhotonIDs:mvaPhoID-Spring16-nonTrig-V1-wp80'),
-
-                                                      # 2017 & 2018
-                                                      cutBasedPhotonID_Fall17_94X_V2_loose=cms.InputTag(
-                                                          'egmPhotonIDs:cutBasedPhotonID-Fall17-94X-V2-loose'),
-                                                      cutBasedPhotonID_Fall17_94X_V2_medium=cms.InputTag(
-                                                          'egmPhotonIDs:cutBasedPhotonID-Fall17-94X-V2-medium'),
-                                                      cutBasedPhotonID_Fall17_94X_V2_tight=cms.InputTag(
-                                                          'egmPhotonIDs:cutBasedPhotonID-Fall17-94X-V2-tight'),
-                                                      mvaPhoID_Fall17_iso_V2_wp90=cms.InputTag(
-                                                          'egmPhotonIDs:mvaPhoID-RunIIFall17-v2-wp90'),
-                                                      mvaPhoID_Fall17_iso_V2_wp80=cms.InputTag(
-                                                          'egmPhotonIDs:mvaPhoID-RunIIFall17-v2-wp80'),
-                                                      ),
-                                                )
-    task.add(process.egmPhotonIDs)
-    task.add(process.slimmedPhotonsUSER)
+    rename_module(process, task, "slimmedPhotons", "slimmedPhotonsUSER", False)
 
     ###############################################
     # TRIGGER, MET FILTERS
@@ -2020,7 +1980,7 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
     ###############################################
     # Deal with bad ECAL endcap crystals
     # https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2#How_to_run_ecal_BadCalibReducedM
-    bad_ecal = useData and ("2017" in year or "2018" in year)
+    bad_ecal = useData and (year=="2017v1" or year=="2017v2" or year=="2018")
     if bad_ecal:
         process.load('RecoMET.METFilters.ecalBadCalibFilter_cfi')
 
@@ -2034,12 +1994,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
              872437185,872422564,872421566,872421695,
              872421955,872421567,872437184,872421951,
              872421694,872437056,872437057,872437313
-
-             # Are these supposed to be used as well?
-             # 872438182,872438951,872439990,872439864,
-             # 872439609,872437181,872437182,872437053,
-             # 872436794,872436667,872436536,872421541,
-             # 872421413,872421414,872421031,872423083,872421439
              ])
 
 
@@ -2052,7 +2006,7 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         )
         task.add(process.ecalBadCalibReducedMINIAODFilter)
 
-    # Run Bad Charged Hadron and Bad Muon filters for 2016v2, since they were
+    # Run Bad Muon filters for 2016v2, since they were
     # only introduced after samples were produced.
     # Newer samples will already have these.
     do_bad_muon_charged_filters = (year == "2016v2")
@@ -2064,18 +2018,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
         process.BadPFMuonFilter.taggingMode = True  # Don't veto, store bit in ntuple
         task.add(process.BadPFMuonFilter)
         extra_trigger_bits.append(process.BadPFMuonFilter.label())
-
-        # DISABLE Bad Charged Hadron Filter for now as some inefficiency for TeV jets
-        # Under review, update when necessary
-        # process.load('RecoMET.METFilters.BadChargedCandidateFilter_cfi')
-        # process.BadChargedCandidateFilter.muons = cms.InputTag("slimmedMuons")
-        # process.BadChargedCandidateFilter.PFCandidates = cms.InputTag("packedPFCandidates")
-        # process.BadChargedCandidateFilter.taggingMode = True
-        # task.add(process.BadChargedCandidateFilter)
-        # extra_trigger_bits.append(process.BadChargedCandidateFilter.label())
-
-    # NtupleWriter
-    #
 
     if useData:
         metfilterpath = "RECO"
@@ -2146,26 +2088,26 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                         # via the "userInt" method in the pat::Electron collection used 'electron_source'
                                         # [the configuration of the pat::Electron::userInt variables should be done in PATElectronUserData]
                                         # 2016
-                                        'heepElectronID_HEEPV60',
-                                        'cutBasedElectronID_Summer16_80X_V1_veto',
-                                        'cutBasedElectronID_Summer16_80X_V1_loose',
-                                        'cutBasedElectronID_Summer16_80X_V1_medium',
-                                        'cutBasedElectronID_Summer16_80X_V1_tight',
-                                        'cutBasedElectronHLTPreselection_Summer16_V1',
-                                        'mvaEleID_Spring16_GeneralPurpose_V1_wp90',
-                                        'mvaEleID_Spring16_GeneralPurpose_V1_wp80',
+                                        #'heepElectronID-HEEPV60',
+                                        'cutBasedElectronID-Summer16-80X-V1-veto',
+                                        'cutBasedElectronID-Summer16-80X-V1-loose',
+                                        'cutBasedElectronID-Summer16-80X-V1-medium',
+                                        'cutBasedElectronID-Summer16-80X-V1-tight',
+                                        #'cutBasedElectronHLTPreselection-Summer16-V1',
+                                        'mvaEleID-Spring16-GeneralPurpose-V1-wp90',
+                                        'mvaEleID-Spring16-GeneralPurpose-V1-wp80',
                                         # 2017 & 2018
-                                        'cutBasedElectronID_Fall17_94X_V2_veto',
-                                        'cutBasedElectronID_Fall17_94X_V2_loose',
-                                        'cutBasedElectronID_Fall17_94X_V2_medium',
-                                        'cutBasedElectronID_Fall17_94X_V2_tight',
-                                        'heepElectronID_HEEPV70',
-                                        'mvaEleID_Fall17_noIso_V2_wp90',
-                                        'mvaEleID_Fall17_noIso_V2_wp80',
-                                        'mvaEleID_Fall17_noIso_V2_wpLoose',
-                                        'mvaEleID_Fall17_iso_V2_wp90',
-                                        'mvaEleID_Fall17_iso_V2_wp80',
-                                        'mvaEleID_Fall17_iso_V2_wpLoose',
+                                        'cutBasedElectronID-Fall17-94X-V2-veto',
+                                        'cutBasedElectronID-Fall17-94X-V2-loose',
+                                        'cutBasedElectronID-Fall17-94X-V2-medium',
+                                        'cutBasedElectronID-Fall17-94X-V2-tight',
+                                        'heepElectronID-HEEPV70',
+                                        'mvaEleID-Fall17-noIso-V2-wp90',
+                                        'mvaEleID-Fall17-noIso-V2-wp80',
+                                        'mvaEleID-Fall17-noIso-V2-wpLoose',
+                                        'mvaEleID-Fall17-iso-V2-wp90',
+                                        'mvaEleID-Fall17-iso-V2-wp80',
+                                        'mvaEleID-Fall17-iso-V2-wpLoose',
                                     ),
 
                                     doMuons=cms.bool(True),
@@ -2184,17 +2126,17 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                         # via the "userInt" method in the pat::Electron collection used 'photon_source'
                                         # [the configuration of the pat::Electron::userInt variables should be done in PATElectronUserData]
                                         # 2016
-                                        'cutBasedPhotonID_Spring16_V2p2_loose',
-                                        'cutBasedPhotonID_Spring16_V2p2_medium',
-                                        'cutBasedPhotonID_Spring16_V2p2_tight',
-                                        'mvaPhoID_Spring16_nonTrig_V1_wp90',
-                                        'mvaPhoID_Spring16_nonTrig_V1_wp80',
+                                        'cutBasedPhotonID-Spring16-V2p2-loose',
+                                        'cutBasedPhotonID-Spring16-V2p2-medium',
+                                        'cutBasedPhotonID-Spring16-V2p2-tight',
+                                        'mvaPhoID-Spring16-nonTrig-V1-wp90',
+                                        'mvaPhoID-Spring16-nonTrig-V1-wp80',
                                         # 2017 & 2018
-                                        'cutBasedPhotonID_Fall17_94X_V2_loose',
-                                        'cutBasedPhotonID_Fall17_94X_V2_medium',
-                                        'cutBasedPhotonID_Fall17_94X_V2_tight',
-                                        'mvaPhoID_Fall17_iso_V2_wp80',
-                                        'mvaPhoID_Fall17_iso_V2_wp90',
+                                        'cutBasedPhotonID-Fall17-94X-V2-loose',
+                                        'cutBasedPhotonID-Fall17-94X-V2-medium',
+                                        'cutBasedPhotonID-Fall17-94X-V2-tight',
+                                        'mvaPhoID-RunIIFall17-v2-wp80', # changed,
+                                        'mvaPhoID-RunIIFall17-v2-wp90', # changed
                                     ),
 
                                     doJets=cms.bool(True),
@@ -2248,13 +2190,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                             # Otherwise use "daughters" here to treat all jet daughters as subjets
                                             subjet_source=cms.string("SoftDropCHS"),
 
-                                            # Specify if you want to store b-tagging taginfos for subjet collection,
-                                            # make sure to have included them with .addTagInfos = True
-                                            # addTagInfos = True is currently true by default, however,
-                                            # only for collections produced and not read directly from miniAOD
-                                            # Default is do_subjet_taginfo=False
-                                            do_subjet_taginfo=cms.bool(True),
-
                                             # If you want to store the MVA Higgs tagger discriminator,
                                             # specify the jet collection from which to pick it up and the tagger name
                                             # currently the discriminator is trained on ungroomed jets, so
@@ -2290,8 +2225,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                             topjet_source=cms.string("jetsAk8PuppiSubstructure"),  # store ungroomed vars
                                             subjet_source=cms.string("SoftDropPuppi"),
 
-                                            do_subjet_taginfo=cms.bool(True),
-
                                             higgstag_source=cms.string("patJetsAk8PuppiJetsFat"),
                                             higgstag_name=cms.string("pfBoostedDoubleSecondaryVertexAK8BJetTags"),
                                             higgstaginfo_source=cms.string("pfBoostedDoubleSVTagInfosPuppi"),  # FIXME Does this need replacing?
@@ -2311,7 +2244,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                         # cms.PSet(
                                         #     topjet_source=cms.string("slimmedJetsAK8"),  # puppijets in 2017 MiniAOD & later
                                         #     subjet_source=cms.string("SoftDropPuppi"),
-                                        #     do_subjet_taginfo=cms.bool(False),
                                         #     higgstag_source=cms.string("patJetsAk8PuppiJetsFat"),
                                         #     higgstag_name=cms.string("pfBoostedDoubleSecondaryVertexAK8BJetTags"),
                                         #     #njettiness_source = cms.string(""),
@@ -2335,7 +2267,6 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                         #     topjet_source = cms.string(
                                         #         "patJetsHepTopTagCHSPacked"),
                                         #     subjet_source = cms.string("daughters"),
-                                        #     do_subjet_taginfo = cms.bool(True),
                                         #     higgstag_source = cms.string(
                                         #         "patJetsCa15CHSJets"),
                                         #     higgstag_name=cms.string(
@@ -2592,7 +2523,7 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
                                     doGenXCone_dijet=cms.bool(False),
                                     #store GEN constituents for GenXCone_dijet_sources: doGenJetConstituentsNjets and doGenJetConstituentsMinJetPt are combined with OR
                                     doGenxconeDijetJetConstituentsNjets=cms.uint32(0),#store constituents for N leading topjets, where N is parameter
-                                    doGenxconeDijetJetConstituentsMinJetPt=cms.double(-1),#store constituence for all topjets with pt above threshold, set to negative value if not 
+                                    doGenxconeDijetJetConstituentsMinJetPt=cms.double(-1),#store constituence for all topjets with pt above threshold, set to negative value if not
                                     GenXCone_dijet_sources=cms.VInputTag(
                                         cms.InputTag("genXCone2jets04"),
                                         cms.InputTag("genXCone3jets04"),
@@ -2609,8 +2540,7 @@ def generate_process(year, useData=True, isDebug=False, fatjet_ptmin=120.):
     # Note: we run in uncsheduled mode, i.e. all modules are run as required;
     # just make sure that the electron IDs run before MyNtuple
     process.p = cms.Path(
-        process.egmGsfElectronIDSequence *
-        process.egmPhotonIDSequence *
+        process.egammaPostRecoSeq *
         process.MyNtuple
 #        * process.content
     )

@@ -31,12 +31,18 @@ CommonModules::CommonModules(){
   jec_tag_2018 = "Autumn18";
   jec_ver_2018 = "19";
 
+  jec_tag_UL16preVFP = "Summer19UL16";
+  jec_ver_UL16preVFP = "2";
+
+  jec_tag_UL16postVFP = "Summer19UL16APV";
+  jec_ver_UL16postVFP = "2";
+
   jec_tag_UL17 = "Summer19UL17";
   jec_ver_UL17 = "5";
 
   // FIXME: update when official set
-  jec_tag_UL18 = "Autumn18";
-  jec_ver_UL18 = "19";
+  jec_tag_UL18 = "Summer19UL18";
+  jec_ver_UL18 = "5";
 
   jec_jet_coll = "AK4PFchs";
 }
@@ -84,6 +90,8 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
       jet_corrector_MC->setup2016(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_2016, jec_ver_2016, jec_jet_coll)));
       jet_corrector_MC->setup2017(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_2017, jec_ver_2017, jec_jet_coll)));
       jet_corrector_MC->setup2018(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_2018, jec_ver_2018, jec_jet_coll)));
+      jet_corrector_MC->setupUL16preVFP(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_UL16preVFP, jec_ver_UL16preVFP, jec_jet_coll)));
+      jet_corrector_MC->setupUL16postVFP(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_UL16postVFP, jec_ver_UL16postVFP, jec_jet_coll)));
       jet_corrector_MC->setupUL17(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_UL17, jec_ver_UL17, jec_jet_coll)));
       jet_corrector_MC->setupUL18(std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesMC(jec_tag_UL18, jec_ver_UL18, jec_jet_coll)));
     }
@@ -107,6 +115,16 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
         jec_switcher_18->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_2018, jec_ver_2018, jec_jet_coll, runItr)));
       }
 
+      jec_switcher_UL16preVFP.reset(new RunSwitcher(ctx, "2016"));
+      for (const auto & runItr : runPeriodsUL16preVFP) {
+        jec_switcher_UL16preVFP->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_UL16preVFP, jec_ver_UL16preVFP, jec_jet_coll, runItr)));
+      }
+
+      jec_switcher_UL16postVFP.reset(new RunSwitcher(ctx, "2016"));
+      for (const auto & runItr : runPeriodsUL16postVFP) {
+        jec_switcher_UL16postVFP->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_UL16postVFP, jec_ver_UL16postVFP, jec_jet_coll, runItr)));
+      }
+
       jec_switcher_UL17.reset(new RunSwitcher(ctx, "2017"));
       for (const auto & runItr : runPeriods2017) {
         jec_switcher_UL17->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_UL17, jec_ver_UL17, jec_jet_coll, runItr)));
@@ -121,26 +139,55 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
       jet_corrector_data->setup2016(jec_switcher_16);
       jet_corrector_data->setup2017(jec_switcher_17);
       jet_corrector_data->setup2018(jec_switcher_18);
+      jet_corrector_data->setupUL16preVFP(jec_switcher_UL16preVFP);
+      jet_corrector_data->setupUL16postVFP(jec_switcher_UL16postVFP);
       jet_corrector_data->setupUL17(jec_switcher_UL17);
       jet_corrector_data->setupUL18(jec_switcher_UL18);
     }
   }
   if(metfilters){
-    // https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2
     metfilters_selection.reset(new AndSelection(ctx, "metfilters"));
-    metfilters_selection->add<TriggerSelection>("HBHENoiseFilter", "Flag_HBHENoiseFilter");
-    metfilters_selection->add<TriggerSelection>("HBHENoiseIsoFilter", "Flag_HBHENoiseIsoFilter");
-    metfilters_selection->add<TriggerSelection>("globalSuperTightHalo2016Filter", "Flag_globalSuperTightHalo2016Filter");
-    metfilters_selection->add<TriggerSelection>("EcalDeadCellTriggerPrimitiveFilter", "Flag_EcalDeadCellTriggerPrimitiveFilter");
-    if (!is_mc) metfilters_selection->add<TriggerSelection>("eeBadScFilter", "Flag_eeBadScFilter");
-    // metfilters_selection->add<TriggerSelection>("BadChargedCandidateFilter", "Flag_BadChargedCandidateFilter"); // Not recommended, under review. Separate module in ntuple_generator for 2016v2
-    if (year != Year::is2016v2) {
+
+    // https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2
+
+    if( is_UL(year) ) {
+      // recommendation for UL datasets
+      //
+      // Recommendation for UL still NOT final
+      // The following needs to be updated!
+      // - UL 2016 MC treatment is still missing recommendation (treat as UL 17/18 for now, but needs update)
+      // - BadPFMuonDzFilter not in Summer19 UL samples, only in Summer20 (?)
+      // 
+      metfilters_selection->add<TriggerSelection>("goodVertices", "Flag_goodVertices");
+      metfilters_selection->add<TriggerSelection>("globalSuperTightHalo2016Filter", "Flag_globalSuperTightHalo2016Filter");
+      metfilters_selection->add<TriggerSelection>("HBHENoiseFilter", "Flag_HBHENoiseFilter");
+      metfilters_selection->add<TriggerSelection>("HBHENoiseIsoFilter", "Flag_HBHENoiseIsoFilter");
+      metfilters_selection->add<TriggerSelection>("EcalDeadCellTriggerPrimitiveFilter", "Flag_EcalDeadCellTriggerPrimitiveFilter");
       metfilters_selection->add<TriggerSelection>("BadPFMuonFilter", "Flag_BadPFMuonFilter");
+      //metfilters_selection->add<TriggerSelection>("BadPFMuonDzFilter", "Flag_BadPFMuonDzFilter");
+      if (!is_mc) {
+	metfilters_selection->add<TriggerSelection>("eeBadScFilter", "Flag_eeBadScFilter");
+      }
+      if ( year==Year::isUL17 || year==Year::isUL18 ) {
+	metfilters_selection->add<TriggerSelection>("Flag_ecalBadCalibFilter", "Flag_ecalBadCalibFilter");
+      }
+
     } else {
-      metfilters_selection->add<TriggerSelection>("BadPFMuonFilter", "Extra_BadPFMuonFilter");
+      // recommendation for EOY datasets
+      metfilters_selection->add<TriggerSelection>("goodVertices", "Flag_goodVertices");
+      metfilters_selection->add<TriggerSelection>("globalSuperTightHalo2016Filter", "Flag_globalSuperTightHalo2016Filter");
+      metfilters_selection->add<TriggerSelection>("HBHENoiseFilter", "Flag_HBHENoiseFilter");
+      metfilters_selection->add<TriggerSelection>("HBHENoiseIsoFilter", "Flag_HBHENoiseIsoFilter");
+      metfilters_selection->add<TriggerSelection>("EcalDeadCellTriggerPrimitiveFilter", "Flag_EcalDeadCellTriggerPrimitiveFilter");
+      if (year == Year::is2016v2) { // filter was run during ntuple production as info not in miniAOD
+	metfilters_selection->add<TriggerSelection>("BadPFMuonFilter", "Extra_BadPFMuonFilter");
+      } else {
+	metfilters_selection->add<TriggerSelection>("BadPFMuonFilter", "Flag_BadPFMuonFilter");
+      }
+      if (!is_mc) metfilters_selection->add<TriggerSelection>("eeBadScFilter", "Flag_eeBadScFilter");
+      metfilters_selection->add<EcalBadCalibSelection>("EcalBadCalibSelection"); // Use this instead of Flag_ecalBadCalibFilter, uses ecalBadCalibReducedMINIAODFilter in ntuple_generator
     }
-    metfilters_selection->add<TriggerSelection>("goodVertices", "Flag_goodVertices");
-    metfilters_selection->add<EcalBadCalibSelection>("EcalBadCalibSelection"); // Use this instead of Flag_ecalBadCalibFilter, uses ecalBadCalibReducedMINIAODFilter in ntuple_generator
+
     if(pvfilter) metfilters_selection->add<NPVSelection>("1 good PV",1,-1,pvid);
   }
   if(eleid) modules.emplace_back(new ElectronCleaner(eleid));
@@ -157,6 +204,8 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
       JLC_MC->setup2016(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_2016, jec_ver_2016, jec_jet_coll)));
       JLC_MC->setup2017(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_2017, jec_ver_2017, jec_jet_coll)));
       JLC_MC->setup2018(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_2018, jec_ver_2018, jec_jet_coll)));
+      JLC_MC->setupUL16preVFP(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_UL16preVFP, jec_ver_UL16preVFP, jec_jet_coll)));
+      JLC_MC->setupUL16postVFP(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_UL16postVFP, jec_ver_UL16postVFP, jec_jet_coll)));
       JLC_MC->setupUL17(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_UL17, jec_ver_UL17, jec_jet_coll)));
       JLC_MC->setupUL18(std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesMC(jec_tag_UL18, jec_ver_UL18, jec_jet_coll)));
     }
@@ -176,6 +225,16 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
         JLC_switcher_18->setupRun(runItr, std::make_shared<JetLeptonCleaner_by_KEYmatching>(ctx, JERFiles::JECFilesDATA(jec_tag_2018, jec_ver_2018, jec_jet_coll, runItr)));
       }
 
+      JLC_switcher_UL16preVFP.reset(new RunSwitcher(ctx, "2016"));
+      for (const auto & runItr : runPeriodsUL16preVFP) {
+        JLC_switcher_UL16preVFP->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_UL17, jec_ver_UL17, jec_jet_coll, runItr)));
+      }
+
+      JLC_switcher_UL16postVFP.reset(new RunSwitcher(ctx, "2016"));
+      for (const auto & runItr : runPeriodsUL16postVFP) {
+        JLC_switcher_UL16postVFP->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_UL17, jec_ver_UL17, jec_jet_coll, runItr)));
+      }
+
       JLC_switcher_UL17.reset(new RunSwitcher(ctx, "2017"));
       for (const auto & runItr : runPeriods2017) {
         JLC_switcher_UL17->setupRun(runItr, std::make_shared<JetCorrector>(ctx, JERFiles::JECFilesDATA(jec_tag_UL17, jec_ver_UL17, jec_jet_coll, runItr)));
@@ -190,6 +249,8 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
       JLC_data->setup2016(JLC_switcher_16);
       JLC_data->setup2017(JLC_switcher_17);
       JLC_data->setup2018(JLC_switcher_18);
+      JLC_data->setupUL16preVFP(JLC_switcher_UL16preVFP);
+      JLC_data->setupUL16postVFP(JLC_switcher_UL16postVFP);
       JLC_data->setupUL17(JLC_switcher_UL17);
       JLC_data->setupUL18(JLC_switcher_UL18);
     }
@@ -202,6 +263,15 @@ void CommonModules::init(Context & ctx, const std::string & SysType_PU){
 bool CommonModules::process(uhh2::Event & event){
   if(!init_done){
     throw runtime_error("CommonModules::init not called (has to be called in AnalysisModule constructor)");
+  }
+
+  // Must run these first, otherwise e.g. JEC that depend on valid run number will crash
+  if(event.isRealData && lumisel){
+    if(!lumi_selection->passes(event)) return false;
+  }
+
+  if(metfilters){
+    if(!metfilters_selection->passes(event)) return false;
   }
 
   for(auto & m : modules){
@@ -244,17 +314,6 @@ bool CommonModules::process(uhh2::Event & event){
 
   if(jetptsort){
     sort_by_pt(*event.jets);
-  }
-
-  // Put the return parts last, such that every other modifying module always runs
-  // This avoids bugs where this function is exited early, but the user expects
-  // the other modules to always run
-  if(event.isRealData && lumisel){
-    if(!lumi_selection->passes(event)) return false;
-  }
-
-  if(metfilters){
-    if(!metfilters_selection->passes(event)) return false;
   }
 
   return true;
@@ -327,11 +386,13 @@ void CommonModules::print_setup() const {
   }
   cout << endl;
   if (jec || jetlepcleaner || do_metcorrection) {
-    cout << "2016 JECs: " << jec_tag_2016 << " V" << jec_ver_2016 << " for " << jec_jet_coll << endl;
-    cout << "2017 JECs: " << jec_tag_2017 << " V" << jec_ver_2017 << " for " << jec_jet_coll << endl;
-    cout << "2018 JECs: " << jec_tag_2018 << " V" << jec_ver_2018 << " for " << jec_jet_coll << endl;
-    cout << "UL17 JECs: " << jec_tag_UL17 << " V" << jec_ver_UL17 << " for " << jec_jet_coll << endl;
-    cout << "UL18 JECs: " << jec_tag_UL18 << " V" << jec_ver_UL18 << " for " << jec_jet_coll << endl;
+    cout << "2016        JECs: "  << jec_tag_2016         << " V" << jec_ver_2016        << " for " << jec_jet_coll << endl;
+    cout << "2017        JECs: "  << jec_tag_2017         << " V" << jec_ver_2017        << " for " << jec_jet_coll << endl;
+    cout << "2018        JECs: "  << jec_tag_2018         << " V" << jec_ver_2018        << " for " << jec_jet_coll << endl;
+    cout << "UL16preVFP  JECs: "  << jec_tag_UL16preVFP   << " V" << jec_ver_UL16preVFP  << " for " << jec_jet_coll << endl;
+    cout << "UL16postVFP JECs: "  << jec_tag_UL16postVFP  << " V" << jec_ver_UL16postVFP << " for " << jec_jet_coll << endl;
+    cout << "UL17        JECs: "  << jec_tag_UL17         << " V" << jec_ver_UL17        << " for " << jec_jet_coll << endl;
+    cout << "UL18        JECs: "  << jec_tag_UL18         << " V" << jec_ver_UL18        << " for " << jec_jet_coll << endl;
   }
   cout << endl;
 

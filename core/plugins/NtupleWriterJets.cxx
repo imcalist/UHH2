@@ -210,7 +210,7 @@ void NtupleWriterJets::process(const edm::Event & event, uhh2::Event & uevent,  
         bool storePFcands = false;
         if(i<NPFJetwConstituents_ || pat_jet.pt()>MinPtJetwConstituents_) storePFcands = true;
         try {
-          fill_jet_info(uevent,pat_jet, jet, true, false, doPuppiSpecific, storePFcands);
+          fill_jet_info(uevent,pat_jet, jet, true, doPuppiSpecific, storePFcands);
         }
         catch(runtime_error & ex){
           throw cms::Exception("fill_jet_info error", "Error in fill_jet_info NtupleWriterJets::process for jets with src = " + src.label());
@@ -240,7 +240,7 @@ void NtupleWriterJets::process(const edm::Event & event, uhh2::Event & uevent,  
 }
 
 
-void NtupleWriterJets::fill_jet_info(uhh2::Event & uevent, const pat::Jet & pat_jet, Jet & jet, bool do_btagging, bool do_taginfo, bool doPuppiSpecific, bool fill_pfcand){
+void NtupleWriterJets::fill_jet_info(uhh2::Event & uevent, const pat::Jet & pat_jet, Jet & jet, bool do_btagging, bool doPuppiSpecific, bool fill_pfcand){
   jet.set_charge(pat_jet.charge());
   jet.set_pt(pat_jet.pt());
   jet.set_eta(pat_jet.eta());
@@ -306,80 +306,6 @@ void NtupleWriterJets::fill_jet_info(uhh2::Event & uevent, const pat::Jet & pat_
     jet.set_JEC_L1factor_raw(1.);
   }
 
-
-  if(do_taginfo){
-    JetBTagInfo jetbtaginfo;
-    //ip tag info
-    reco::TaggingVariableList tvlIP=pat_jet.tagInfoCandIP("pfImpactParameter")->taggingVariables();
-    jetbtaginfo.set_TrackMomentum(tvlIP.getList(reco::btau::trackMomentum,false));
-    jetbtaginfo.set_TrackEta(tvlIP.getList(reco::btau::trackEta,false));
-    jetbtaginfo.set_TrackEtaRel(tvlIP.getList(reco::btau::trackEtaRel,false));
-    jetbtaginfo.set_TrackDeltaR(tvlIP.getList(reco::btau::trackDeltaR,false));
-    jetbtaginfo.set_TrackSip3dVal(tvlIP.getList(reco::btau::trackSip3dVal,false));
-    jetbtaginfo.set_TrackSip3dSig(tvlIP.getList(reco::btau::trackSip3dSig,false));
-    jetbtaginfo.set_TrackSip2dVal(tvlIP.getList(reco::btau::trackSip2dVal,false));
-    jetbtaginfo.set_TrackSip2dSig(tvlIP.getList(reco::btau::trackSip2dSig,false));
-    jetbtaginfo.set_TrackDecayLenVal(tvlIP.getList(reco::btau::trackDecayLenVal,false));
-    jetbtaginfo.set_TrackChi2(tvlIP.getList(reco::btau::trackChi2,false));
-    jetbtaginfo.set_TrackNTotalHits(tvlIP.getList(reco::btau::trackNTotalHits,false));
-    jetbtaginfo.set_TrackNPixelHits(tvlIP.getList(reco::btau::trackNPixelHits,false));
-    jetbtaginfo.set_TrackPtRel(tvlIP.getList(reco::btau::trackPtRel,false));
-    jetbtaginfo.set_TrackPPar(tvlIP.getList(reco::btau::trackPPar,false));
-    jetbtaginfo.set_TrackPtRatio(tvlIP.getList(reco::btau::trackPtRatio,false));
-    jetbtaginfo.set_TrackPParRatio(tvlIP.getList(reco::btau::trackPParRatio,false));
-    jetbtaginfo.set_TrackJetDistVal(tvlIP.getList(reco::btau::trackJetDistVal,false));
-    jetbtaginfo.set_TrackJetDistSig(tvlIP.getList(reco::btau::trackJetDistSig,false));
-    jetbtaginfo.set_TrackGhostTrackDistVal(tvlIP.getList(reco::btau::trackGhostTrackDistVal,false));
-    jetbtaginfo.set_TrackGhostTrackDistSig(tvlIP.getList(reco::btau::trackGhostTrackDistSig,false));
-    jetbtaginfo.set_TrackGhostTrackWeight(tvlIP.getList(reco::btau::trackGhostTrackWeight,false));
-    //sv tag info
-    reco::TaggingVariableList tvlSV=pat_jet.tagInfoCandSecondaryVertex("pfInclusiveSecondaryVertexFinder")->taggingVariables();
-    jetbtaginfo.set_FlightDistance2dVal(tvlSV.getList(reco::btau::flightDistance2dVal,false));
-    jetbtaginfo.set_FlightDistance2dSig(tvlSV.getList(reco::btau::flightDistance2dSig,false));
-    jetbtaginfo.set_FlightDistance3dVal(tvlSV.getList(reco::btau::flightDistance3dVal,false));
-    jetbtaginfo.set_FlightDistance3dSig(tvlSV.getList(reco::btau::flightDistance3dSig,false));
-    jetbtaginfo.set_VertexJetDeltaR(tvlSV.getList(reco::btau::vertexJetDeltaR,false));
-    jetbtaginfo.set_JetNSecondaryVertices(pat_jet.tagInfoCandSecondaryVertex("pfInclusiveSecondaryVertexFinder")->nVertices());
-    std::vector<TLorentzVector> vp4; vp4.clear();
-    std::vector<float> vchi2; vchi2.clear();
-    std::vector<float> vndof; vndof.clear();
-    std::vector<float> vchi2ndof; vchi2ndof.clear();
-    std::vector<int> sizetracks; sizetracks.clear();
-    for(unsigned int i = 0; i < pat_jet.tagInfoCandSecondaryVertex("pfInclusiveSecondaryVertexFinder")->nVertices(); ++i) {
-      reco::VertexCompositePtrCandidate sv=pat_jet.tagInfoCandSecondaryVertex("pfInclusiveSecondaryVertexFinder")->secondaryVertex(i);
-      sizetracks.push_back(sv.numberOfSourceCandidatePtrs());
-      ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > p4 = sv.p4();
-      vp4.push_back(TLorentzVector(p4.px(),p4.py(),p4.pz(),p4.e()));
-      vchi2.push_back(sv.vertexChi2());
-      vndof.push_back(sv.vertexNdof());
-      vchi2ndof.push_back(sv.vertexNormalizedChi2());
-    }
-    jetbtaginfo.set_SecondaryVertex(vp4);
-    jetbtaginfo.set_VertexChi2(vchi2);
-    jetbtaginfo.set_VertexNdof(vndof);
-    jetbtaginfo.set_VertexNormalizedChi2(vchi2ndof);
-    jetbtaginfo.set_VertexNTracks(sizetracks);
-    //try computer: currently not implemented! Only draft code for future use
-    /*const GenericMVAJetTagComputer *computer ;
-      edm::ESHandle<JetTagComputer> computerHandle;
-      std::string SVComputer_ = "candidateCombinedSecondaryVertexV2Computer";
-      iSetup.get<JetTagComputerRecord>().get(SVComputer_.c_str(), computerHandle );
-      computer = dynamic_cast<const GenericMVAJetTagComputer*>( computerHandle.product() );
-      if(computer)
-      {
-      std::vector<const reco::BaseTagInfo*>  baseTagInfos;
-      baseTagInfos.push_back(pat_jet.tagInfoTrackIP("pfImpactParameter") );
-      baseTagInfos.push_back(pat_jet.tagInfoSecondaryVertex("pfInclusiveSecondaryVertexFinder") );
-      JetTagComputer::TagInfoHelper helper(baseTagInfos);
-      reco::TaggingVariableList vars = computer->taggingVariables(helper);
-      jetbtaginfo.set_VertexMassJTC(vars.get(reco::btau::vertexMass,-9999));
-      jetbtaginfo.set_VertexCategoryJTC(vars.get(reco::btau::vertexCategory,-9999));
-      jetbtaginfo.set_VertexEnergyRatioJTC(vars.get(reco::btau::vertexEnergyRatio,-9999));
-      jetbtaginfo.set_TrackSip3dSigAboveCharmJTC(vars.get(reco::btau::trackSip3dSigAboveCharm,-9999));
-      }*/
-    jet.set_btaginfo(jetbtaginfo);
-    JetBTagInfo postcheck=jet.btaginfo();
-  }//do taginfos
   if(do_btagging){
     const auto & bdisc = pat_jet.getPairDiscri();
     bool csv = false, csvmva = false,  deepcsv_b = false, deepcsv_bb = false;
@@ -502,7 +428,6 @@ NtupleWriterTopJets::NtupleWriterTopJets(Config & cfg, bool set_jets_member, uns
 
     src_higgs_token = cfg.cc.consumes<std::vector<pat::Jet>>(cfg.higgs_src);
     higgs_name=cfg.higgs_name;
-    do_taginfo_subjets = cfg.do_taginfo_subjets;
     src = cfg.src;
     do_btagging = cfg.do_btagging;
     do_btagging_subjets = cfg.do_btagging_subjets;
@@ -566,7 +491,17 @@ void NtupleWriterTopJets::fill_btag_info(uhh2::Event & uevent, const pat::Jet & 
     decorrmass_deepboosted_probQCDothers=false,decorrmass_deepboosted_probQCDb=false,decorrmass_deepboosted_probTbc=false,
     decorrmass_deepboosted_probWqq=false,decorrmass_deepboosted_probQCDcc=false,decorrmass_deepboosted_probHcc=false,
     decorrmass_deepboosted_probWcq=false,decorrmass_deepboosted_probZcc=false,decorrmass_deepboosted_probZqq=false,
-    decorrmass_deepboosted_probHqqqq=false,decorrmass_deepboosted_probZbb=false;
+    decorrmass_deepboosted_probHqqqq=false,decorrmass_deepboosted_probZbb=false,
+    particlenet_probTbcq=false,particlenet_probTbqq=false,particlenet_probTbc=false,particlenet_probTbq=false,
+    particlenet_probTbel=false,particlenet_probTbmu=false,particlenet_probTbta=false,particlenet_probWcq=false,
+    particlenet_probWqq=false,particlenet_probZbb=false,particlenet_probZcc=false,particlenet_probZqq=false,
+    particlenet_probHbb=false,particlenet_probHcc=false,particlenet_probHqqqq=false,particlenet_probQCDbb=false,
+    particlenet_probQCDcc=false,particlenet_probQCDb=false,particlenet_probQCDc=false,particlenet_probQCDothers=false,
+    particlenet_TvsQCD=false,particlenet_WvsQCD=false,particlenet_ZvsQCD=false,particlenet_ZbbvsQCD=false,
+    particlenet_HbbvsQCD=false,particlenet_HccvsQCD=false,particlenet_H4qvsQCD=false,
+    decorrmass_particlenet_probXbb=false,decorrmass_particlenet_probXcc=false,decorrmass_particlenet_probXqq=false,decorrmass_particlenet_probQCDbb=false,
+    decorrmass_particlenet_probQCDcc=false,decorrmass_particlenet_probQCDb=false,decorrmass_particlenet_probQCDc=false,decorrmass_particlenet_probQCDothers=false,
+    decorrmass_particlenet_XbbvsQCD=false,decorrmass_particlenet_XccvsQCD=false,decorrmass_particlenet_XqqvsQCD=false,particlenet_mass=false;
 
 
     for(const auto & name_value : bdisc){
@@ -836,6 +771,162 @@ void NtupleWriterTopJets::fill_btag_info(uhh2::Event & uevent, const pat::Jet & 
         jet.set_btag_DeepBoosted_probZbb(value);
         deepboosted_probZbb=true;
       }
+      else if(name == "pfParticleNetJetTags:probTbcq"){
+        jet.set_btag_ParticleNetJetTags_probTbcq(value);
+        particlenet_probTbcq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probTbqq"){
+        jet.set_btag_ParticleNetJetTags_probTbqq(value);
+        particlenet_probTbqq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probTbc"){
+        jet.set_btag_ParticleNetJetTags_probTbc(value);
+        particlenet_probTbc = true;
+      }
+      else if(name == "pfParticleNetJetTags:probTbq"){
+        jet.set_btag_ParticleNetJetTags_probTbq(value);
+        particlenet_probTbq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probTbel"){
+        jet.set_btag_ParticleNetJetTags_probTbel(value);
+        particlenet_probTbel = true;
+      }
+      else if(name == "pfParticleNetJetTags:probTbmu"){
+        jet.set_btag_ParticleNetJetTags_probTbmu(value);
+        particlenet_probTbmu = true;
+      }
+      else if(name == "pfParticleNetJetTags:probTbta"){
+        jet.set_btag_ParticleNetJetTags_probTbta(value);
+        particlenet_probTbta = true;
+      }
+      else if(name == "pfParticleNetJetTags:probWcq"){
+        jet.set_btag_ParticleNetJetTags_probWcq(value);
+        particlenet_probWcq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probWqq"){
+        jet.set_btag_ParticleNetJetTags_probWqq(value);
+        particlenet_probWqq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probZbb"){
+        jet.set_btag_ParticleNetJetTags_probZbb(value);
+        particlenet_probZbb = true;
+      }
+      else if(name == "pfParticleNetJetTags:probZcc"){
+        jet.set_btag_ParticleNetJetTags_probZcc(value);
+        particlenet_probZcc = true;
+      }
+      else if(name == "pfParticleNetJetTags:probZqq"){
+        jet.set_btag_ParticleNetJetTags_probZqq(value);
+        particlenet_probZqq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probHbb"){
+        jet.set_btag_ParticleNetJetTags_probHbb(value);
+        particlenet_probHbb = true;
+      }
+      else if(name == "pfParticleNetJetTags:probHcc"){
+        jet.set_btag_ParticleNetJetTags_probHcc(value);
+        particlenet_probHcc = true;
+      }
+      else if(name == "pfParticleNetJetTags:probHqqqq"){
+        jet.set_btag_ParticleNetJetTags_probHqqqq(value);
+        particlenet_probHqqqq = true;
+      }
+      else if(name == "pfParticleNetJetTags:probQCDbb"){
+        jet.set_btag_ParticleNetJetTags_probQCDbb(value);
+        particlenet_probQCDbb = true;
+      }
+      else if(name == "pfParticleNetJetTags:probQCDcc"){
+        jet.set_btag_ParticleNetJetTags_probQCDcc(value);
+        particlenet_probQCDcc = true;
+      }
+      else if(name == "pfParticleNetJetTags:probQCDb"){
+        jet.set_btag_ParticleNetJetTags_probQCDb(value);
+        particlenet_probQCDb = true;
+      }
+      else if(name == "pfParticleNetJetTags:probQCDc"){
+        jet.set_btag_ParticleNetJetTags_probQCDc(value);
+        particlenet_probQCDc = true;
+      }
+      else if(name == "pfParticleNetJetTags:probQCDothers"){
+        jet.set_btag_ParticleNetJetTags_probQCDothers(value);
+        particlenet_probQCDothers = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:TvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_TvsQCD(value);
+        particlenet_TvsQCD = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:WvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_WvsQCD(value);
+        particlenet_WvsQCD = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:ZvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_ZvsQCD(value);
+        particlenet_ZvsQCD = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:ZbbvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_ZbbvsQCD(value);
+        particlenet_ZbbvsQCD = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:HbbvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_HbbvsQCD(value);
+        particlenet_HbbvsQCD = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:HccvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_HccvsQCD(value);
+        particlenet_HccvsQCD = true;
+      }
+      else if(name == "pfParticleNetDiscriminatorsJetTags:H4qvsQCD"){
+        jet.set_btag_ParticleNetDiscriminatorsJetTags_H4qvsQCD(value);
+        particlenet_H4qvsQCD = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probXbb"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probXbb(value);
+        decorrmass_particlenet_probXbb = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probXcc"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probXcc(value);
+        decorrmass_particlenet_probXcc = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probXqq"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probXqq(value);
+        decorrmass_particlenet_probXqq = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probQCDbb"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probQCDbb(value);
+        decorrmass_particlenet_probQCDbb = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probQCDcc"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probQCDcc(value);
+        decorrmass_particlenet_probQCDcc = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probQCDb"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probQCDb(value);
+        decorrmass_particlenet_probQCDb = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probQCDc"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probQCDc(value);
+        decorrmass_particlenet_probQCDc = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetJetTags:probQCDothers"){
+        jet.set_btag_MassDecorrelatedParticleNetJetTags_probQCDothers(value);
+        decorrmass_particlenet_probQCDothers = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XbbvsQCD"){
+        jet.set_btag_MassDecorrelatedParticleNetDiscriminatorsJetTags_XbbvsQCD(value);
+        decorrmass_particlenet_XbbvsQCD = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XccvsQCD"){
+        jet.set_btag_MassDecorrelatedParticleNetDiscriminatorsJetTags_XccvsQCD(value);
+        decorrmass_particlenet_XccvsQCD = true;
+      }
+      else if(name == "pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XqqvsQCD"){
+        jet.set_btag_MassDecorrelatedParticleNetDiscriminatorsJetTags_XqqvsQCD(value);
+        decorrmass_particlenet_XqqvsQCD = true;
+      }
+      else if(name == "pfParticleNetMassRegressionJetTags:mass"){
+        jet.set_ParticleNetMassRegressionJetTags_mass(value);
+        particlenet_mass=true;
+      }
 
     }
 
@@ -863,7 +954,17 @@ void NtupleWriterTopJets::fill_btag_info(uhh2::Event & uevent, const pat::Jet & 
        || !decorrmass_deepboosted_probQCDcc || !decorrmass_deepboosted_probHcc
        || !decorrmass_deepboosted_probWcq || !decorrmass_deepboosted_probZcc
        || !decorrmass_deepboosted_probZqq || !decorrmass_deepboosted_probHqqqq
-       || !decorrmass_deepboosted_probZbb){
+       || !decorrmass_deepboosted_probZbb
+       || !particlenet_probTbcq || !particlenet_probTbqq || !particlenet_probTbc || !particlenet_probTbq
+       || !particlenet_probTbel || !particlenet_probTbmu || !particlenet_probTbta || !particlenet_probWcq
+       || !particlenet_probWqq || !particlenet_probZbb || !particlenet_probZcc || !particlenet_probZqq
+       || !particlenet_probHbb || !particlenet_probHcc || !particlenet_probHqqqq || !particlenet_probQCDbb
+       || !particlenet_probQCDcc || !particlenet_probQCDb || !particlenet_probQCDc || !particlenet_probQCDothers
+       || !particlenet_TvsQCD || !particlenet_WvsQCD || !particlenet_ZvsQCD || !particlenet_ZbbvsQCD
+       || !particlenet_HbbvsQCD || !particlenet_HccvsQCD || !particlenet_H4qvsQCD
+       || !decorrmass_particlenet_probXbb || !decorrmass_particlenet_probXcc || !decorrmass_particlenet_probXqq || !decorrmass_particlenet_probQCDbb
+       || !decorrmass_particlenet_probQCDcc || !decorrmass_particlenet_probQCDb || !decorrmass_particlenet_probQCDc || !decorrmass_particlenet_probQCDothers
+       || !decorrmass_particlenet_XbbvsQCD || !decorrmass_particlenet_XccvsQCD || !decorrmass_particlenet_XqqvsQCD || !particlenet_mass){
       if(btag_warning){
         std::string btag_list = "";
         for(const auto & name_value : bdisc){
@@ -989,7 +1090,7 @@ void NtupleWriterTopJets::process(const edm::Event & event, uhh2::Event & uevent
         bool storePFcands = false;
         if(i<NPFJetwConstituents_ || pat_topjet.pt()>MinPtJetwConstituents_) storePFcands = true;
         try{
-          uhh2::NtupleWriterJets::fill_jet_info(uevent,pat_topjet, topjet, do_btagging, false, doPuppiSpecific, storePFcands);
+          uhh2::NtupleWriterJets::fill_jet_info(uevent,pat_topjet, topjet, do_btagging, doPuppiSpecific, storePFcands);
         }catch(runtime_error &){
           throw cms::Exception("fill_jet_info error", "Error in fill_jet_info for topjets in NtupleWriterTopJets with src = " + src.label());
         }
@@ -1325,7 +1426,7 @@ void NtupleWriterTopJets::process(const edm::Event & event, uhh2::Event & uevent
             auto patsubjetd = dynamic_cast<const pat::Jet *>(pat_topjet.daughter(k));
             if (patsubjetd) {
 	      try{
-		NtupleWriterJets::fill_jet_info(uevent,*patsubjetd, subjet, do_btagging_subjets, do_taginfo_subjets, doPuppiSpecific, storePFcands);
+		NtupleWriterJets::fill_jet_info(uevent,*patsubjetd, subjet, do_btagging_subjets, doPuppiSpecific, storePFcands);
 	      }catch(runtime_error &){
                 throw cms::Exception("fill_jet_info error", "Error in fill_jet_info for daughters in NtupleWriterTopJets with src = " + src.label());
 	      }
@@ -1354,7 +1455,7 @@ void NtupleWriterTopJets::process(const edm::Event & event, uhh2::Event & uevent
 	    auto tpatsubjet = dynamic_cast<const pat::Jet *>(tSubjets.at(sj).get());
             if (tpatsubjet) {
 	      try{
-		NtupleWriterJets::fill_jet_info(uevent,*tpatsubjet, subjet, do_btagging_subjets, do_taginfo_subjets, doPuppiSpecific, storePFcands);
+		NtupleWriterJets::fill_jet_info(uevent,*tpatsubjet, subjet, do_btagging_subjets, doPuppiSpecific, storePFcands);
 	      }catch(runtime_error &){
                 throw cms::Exception("fill_jet_info error", "Error in fill_jet_info for subjets in NtupleWriterTopJets with src = " + src.label());
 	      }
