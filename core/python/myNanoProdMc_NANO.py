@@ -102,8 +102,7 @@ addJetCollection(
 					elSource = cms.InputTag("slimmedElectrons"),
 					pfCandidates = cms.InputTag("packedPFCandidates"),
 					genJetCollection = cms.InputTag("slimmedGenJets"),
-					genParticles = cms.InputTag("prunedGenParticles"),
-					algo = "XCone"
+					genParticles = cms.InputTag("prunedGenParticles")
 				 )
 
 process.xconeJetTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
