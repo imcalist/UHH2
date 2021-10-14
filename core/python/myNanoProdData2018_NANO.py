@@ -2,11 +2,11 @@
 # using: 
 # Revision: 1.19 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: myNanoProdMc -s NANO --mc --eventcontent NANOAODSIM --datatier NANOAODSIM --no_exec --conditions 102X_upgrade2018_realistic_v15 --era Run2_2018,run2_nanoAOD_102Xv1 --customise_commands=process.add_(cms.Service('InitRootHandlers', EnableIMT = cms.untracked.bool(False)))
+# with command line options: myNanoProdData2018 -s NANO --data --eventcontent NANOAOD --datatier NANOAOD --no_exec --conditions 106X_dataRun2_v32 --era Run2_2018,run2_nanoAOD_106Xv1 --customise_commands=process.add_(cms.Service('InitRootHandlers', EnableIMT = cms.untracked.bool(False)))
 import FWCore.ParameterSet.Config as cms
 
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
-from Configuration.Eras.Modifier_run2_nanoAOD_102Xv1_cff import run2_nanoAOD_102Xv1
+from Configuration.Eras.Modifier_run2_nanoAOD_106Xv1_cff import run2_nanoAOD_106Xv1
 from Configuration.EventContent.EventContent_cff import *
 from RecoJets.Configuration.RecoPFJets_cff import *
 from RecoJets.JetProducers.fixedGridRhoProducerFastjet_cfi import *
@@ -19,20 +19,24 @@ from UHH2.core.muon_pfMiniIsolation_cff import *
 from UHH2.core.electron_pfMiniIsolation_cff import *
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
 
-process = cms.Process('NANO',Run2_2018,run2_nanoAOD_102Xv1)
+process = cms.Process('NANO',Run2_2018,run2_nanoAOD_106Xv1)
 
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
-process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
-process.load('Configuration.StandardSequences.MagneticField_cff')
+process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
 process.load('PhysicsTools.NanoAOD.nano_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
-#process.load('PhysicsTools.PatAlgos.patSequences_cff')
+# load the standard PAT config
+#process.load("PhysicsTools.PatAlgos.patSequences_cff")
+
+# load the coreTools of PAT
+#from PhysicsTools.PatAlgos.tools.coreTools import runOnData
+#runOnData(process)
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(10)
@@ -40,7 +44,7 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input source
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('/store/mc/RunIISummer19UL18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/00000/087A9D21-84F2-8848-B5A0-BE49F205F4B2.root'),
+    fileNames = cms.untracked.vstring('/store/data/Run2018B/SingleMuon/MINIAOD/12Nov2019_UL2018-v3/00000/006332C4-470B-A44B-A281-8B0B10A7D591.root'),
     secondaryFileNames = cms.untracked.vstring()
 )
 
@@ -50,25 +54,26 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    annotation = cms.untracked.string('myNanoProdMc nevts:1'),
+    annotation = cms.untracked.string('myNanoProdData2018 nevts:1'),
     name = cms.untracked.string('Applications'),
     version = cms.untracked.string('$Revision: 1.19 $')
 )
 
 # Output definition
 
-process.NANOAODSIMoutput = cms.OutputModule("NanoAODOutputModule",
+process.NANOAODoutput = cms.OutputModule("NanoAODOutputModule",
     compressionAlgorithm = cms.untracked.string('LZMA'),
     compressionLevel = cms.untracked.int32(9),
     dataset = cms.untracked.PSet(
-        dataTier = cms.untracked.string('NANOAODSIM'),
+        dataTier = cms.untracked.string('NANOAOD'),
         filterName = cms.untracked.string('')
     ),
-    fileName = cms.untracked.string('XConettbar.root'),
-    outputCommands = process.NANOAODSIMEventContent.outputCommands
+    fileName = cms.untracked.string('XConettbar_data.root'),
+    outputCommands = process.NANOAODEventContent.outputCommands
 )
 
 # Additional output definition
+
 #XCONE
 usePseudoXCone = cms.bool(True)
 process.xconePuppi = cms.EDProducer("XConeProducer",
@@ -101,8 +106,8 @@ addJetCollection(
 					muSource = cms.InputTag("slimmedMuons"),
 					elSource = cms.InputTag("slimmedElectrons"),
 					pfCandidates = cms.InputTag("packedPFCandidates"),
-					genJetCollection = cms.InputTag("slimmedGenJets"),
-					genParticles = cms.InputTag("prunedGenParticles")
+					#genJetCollection = cms.InputTag("slimmedGenJets"),
+					#genParticles = cms.InputTag("prunedGenParticles")
 				 )
 
 process.xconeJetTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
@@ -378,27 +383,25 @@ process.xconeSequence = cms.Sequence(process.xconePuppi + process.xconeJetTable)
 
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '102X_upgrade2018_realistic_v15', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '106X_dataRun2_v32', '')
 
 # Path and EndPath definitions
-process.nanoAOD_step = cms.Path(process.nanoSequenceMC + process.xconeSequence)
+process.nanoAOD_step = cms.Path(process.nanoSequence)
 process.endjob_step = cms.EndPath(process.endOfProcess)
-process.NANOAODSIMoutput_step = cms.EndPath(process.NANOAODSIMoutput)
-
+process.NANOAODoutput_step = cms.EndPath(process.NANOAODoutput)
 
 # Schedule definition
-process.schedule = cms.Schedule(process.nanoAOD_step,process.endjob_step,process.NANOAODSIMoutput_step)
+process.schedule = cms.Schedule(process.nanoAOD_step,process.endjob_step,process.NANOAODoutput_step)
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 
 # customisation of the process.
 
-
 # Automatic addition of the customisation function from PhysicsTools.NanoAOD.nano_cff
-from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeMC 
+from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeData 
 
-#call to customisation function nanoAOD_customizeMC imported from PhysicsTools.NanoAOD.nano_cff
-process = nanoAOD_customizeMC(process)
+#call to customisation function nanoAOD_customizeData imported from PhysicsTools.NanoAOD.nano_cff
+process = nanoAOD_customizeData(process)
 
 # End of customisation functions
 
@@ -409,6 +412,5 @@ process.add_(cms.Service('InitRootHandlers', EnableIMT = cms.untracked.bool(Fals
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
 process = customiseEarlyDelete(process)
 # End adding early deletion
-
-with open('pydump_mc_NANO.py', 'w') as f:
+with open('pydump_data_NANO.py', 'w') as f:
     f.write(process.dumpPython())
